@@ -32,6 +32,7 @@ public class PortalLink extends JavaPlugin {
 	public void onEnable() {
 		getCommand("pl").setExecutor(new CommandExecutor() {
 			public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+				if (args.length == 0) return false;
 				if (args[0].equalsIgnoreCase("link") && args.length > 1) {
 					if (!sender.hasPermission("portallink.link")) {
 						sender.sendMessage(ChatColor.RED + "You do not have permission to define PortalLink links.");
@@ -89,6 +90,17 @@ public class PortalLink extends JavaPlugin {
 						str2 = args[index+1];
 					}
 					plConfig.addLink(str1.replaceAll("\"", ""), str2.replaceAll("\"", ""), (sender instanceof Player) ? sender : null, twoway, whichNether);
+					return true;
+				} else if (args[0].equals("reload") && args.length == 1) {
+					if (!sender.hasPermission("portallink.reload")) {
+						sender.sendMessage(ChatColor.RED + "You do not have permission to reload PortalLink.");
+						return true;
+					}
+					plConfig.loadUserDefinedLinks();
+					if (sender instanceof Player) {
+						sender.sendMessage("PortalLink has been reloaded!");
+					}
+					logInfo("PortalLink has been reloaded!");
 					return true;
 				}
 				return false;

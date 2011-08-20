@@ -32,6 +32,7 @@ public class PortalLinkConfig {
 	}
 	
 	public void loadUserDefinedLinks() {
+		definedLinks.clear();
 		try {
 			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
 			String s = "";

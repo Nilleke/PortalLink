@@ -6,12 +6,21 @@ website: http://2squaredstudios.com/
 description: Fix nether portal linking in alternate worlds.
 commands:
     pl:
-        description: Manipulate PortalLinks
+        description: Manipulate PortalLink
         usage: |
             /<command> link [-2] <World> <OtherWorld>
+            /<command> reload
         aliases:
         - portallink
 permissions:
+    portallink.*:
+        default: op
+        children:
+            portallink.link
+            portallink.reload
     portallink.link:
         default: op
         description: Allows a user to define new PortalLinks.
+    portallink.reload:
+        default: op
+        description: Allows a user to reload PortalLink's links.
