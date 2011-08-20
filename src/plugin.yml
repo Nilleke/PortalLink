@@ -1,6 +1,17 @@
 name: PortalLink
 main: com.twosquaredstudios.PortalLink.PortalLink
-version: 0.1
+version: 0.2
 author: James Clarke (jrtc27)
 website: http://2squaredstudios.com/
 description: Fix nether portal linking in alternate worlds.
+commands:
+    pl:
+        description: Manipulate PortalLinks
+        usage: |
+            /<command> link [-2] <World> <OtherWorld>
+        aliases:
+        - portallink
+permissions:
+    portallink.link:
+        default: op
+        description: Allows a user to define new PortalLinks.

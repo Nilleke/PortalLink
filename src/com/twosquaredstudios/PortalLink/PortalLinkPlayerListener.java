@@ -1,5 +1,6 @@
 package com.twosquaredstudios.PortalLink;
 
+import java.util.Map;
 import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.World.Environment;
@@ -17,49 +18,86 @@ public class PortalLinkPlayerListener extends PlayerListener {
 	}
 	
 	public void onPlayerPortal(PlayerPortalEvent event) {
-		int dimension;
-		Player player = event.getPlayer();
-		Environment environment = player.getWorld().getEnvironment();
-		if (environment.equals(Environment.NETHER)) {
-			dimension = -1;
-		}
-		else {
-			dimension = 0;
+		if (event.isCancelled()) {
+			return;
 		}
 		World fromWorld = null;
 		World toWorld = null;
-		for (World world1 : plugin.getServer().getWorlds()) {
-			if (world1.getEnvironment().equals(environment)) {
-				if (world1.getName().equals(player.getWorld().getName())) {
-					fromWorld = world1;
-				}
+		int dimension = 0;
+		boolean useDimension = true;
+		Player player = event.getPlayer();
+		Map<String,PortalLinkLinkValue> definedLinks = plugin.getPortalLinkConfig().getUserDefinedLinks();
+		if (definedLinks.containsKey(player.getWorld().getName())) {
+			fromWorld = player.getWorld();
+			PortalLinkLinkValue linkValue = definedLinks.get(fromWorld.getName());
+			switch (linkValue.getWhichNether()) {
+				case 0:
+					useDimension = false;
+					break;
+				case 1:
+					// Everything set to this by default
+					break;
+				case 2:
+					dimension = -1;
+					break;
+				case 3:
+					dimension = -1;
+					useDimension = false;
+					break;
+				default:
+					break;
+			}
+			Environment environment = dimension == -1 ? Environment.NETHER : Environment.NORMAL;
+			if (!linkValue.getString().equals("")) {
+				toWorld = plugin.getServer().createWorld(linkValue.getString(), environment);
+			} else {
+				event.setCancelled(true);
+				return;
+			}
+		} else {
+			Environment environment = player.getWorld().getEnvironment();
+			if (environment.equals(Environment.NETHER)) {
+				dimension = -1;
 			}
 			else {
-				String worldWorld;
-				if (dimension == -1) {
-					worldWorld = world1.getName() + "_nether";
+				dimension = 0;
+			}
+			for (World world1 : plugin.getServer().getWorlds()) {
+				if (world1.getEnvironment().equals(environment)) {
+					if (world1.getName().equals(player.getWorld().getName())) {
+						fromWorld = world1;
+					}
 				}
 				else {
-					worldWorld = world1.getName().replaceAll("_nether", "");
+					String worldWorld;
+					if (dimension == -1) {
+						worldWorld = world1.getName() + "_nether";
+					}
+					else {
+						worldWorld = world1.getName().replaceAll("_nether", "");
+					}
+					if (worldWorld.equals(player.getWorld().getName())) {
+						toWorld = world1;
+					}
 				}
-				if (worldWorld.equals(player.getWorld().getName())) {
-					toWorld = world1;
+			}
+			if (!plugin.getAllowNether(fromWorld)) {
+				return;
+			}
+			if (fromWorld == null) {
+				log.warning("Unable To Match A World To The Player's World!");
+				return;
+			}
+			if (toWorld == null) {
+				if (dimension == -1) {
+					toWorld = plugin.getServer().createWorld(fromWorld.getName().replaceAll("_nether", ""), Environment.NORMAL);
+				}
+				else {
+					toWorld = plugin.getServer().createWorld(fromWorld.getName() + "_nether", Environment.NETHER);
 				}
 			}
 		}
-		if (fromWorld == null) {
-			log.warning("Unable To Match A World To The Player's World!");
-			return;
-		}
-		if (toWorld == null) {
-			if (dimension == -1) {
-				toWorld = plugin.getServer().createWorld(fromWorld.getName().replaceAll("_nether", ""), Environment.NORMAL);
-			}
-			else {
-				toWorld = plugin.getServer().createWorld(fromWorld.getName() + "_nether", Environment.NETHER);
-			}
-		}
-		double blockRatio = dimension == -1 ? 8 : 0.125;
+		double blockRatio = useDimension ? (dimension == -1 ? 8 : 0.125) : 1;
 		
 		Location fromLocation = new Location(fromWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), player.getLocation().getYaw(), player.getLocation().getPitch());
 		Location toLocation = new Location(toWorld, (player.getLocation().getX() * blockRatio), player.getLocation().getY(), (player.getLocation().getZ() * blockRatio), player.getLocation().getYaw(), player.getLocation().getPitch());
