@@ -1,23 +1,23 @@
 name: PortalLink
 main: com.twosquaredstudios.PortalLink.PortalLink
-version: 0.2
+version: 0.3
 author: James Clarke (jrtc27)
 website: http://2squaredstudios.com/
-description: Fix nether portal linking in alternate worlds.
+description: Fix Nether portal linking in alternate worlds.
 commands:
     pl:
         description: Manipulate PortalLink
         usage: |
-            /<command> link [-2] <World> <OtherWorld>
-            /<command> reload
+            /<command> link [-b] [-WhichNether] <World> <OtherWorld> - "b" sets the link to work both ways. WhichNether is 0 by default - add 1 if World is a Nether world and 2 if OtherWorld is a Nether world (or 3 for both).
+            /<command> reload                                        - Reloads PortalLinks from links.properties.
         aliases:
         - portallink
 permissions:
     portallink.*:
-        default: op
+        description: Gives access to all PortalLink commands.
         children:
-            portallink.link
-            portallink.reload
+            portallink.link: true
+            portallink.reload: true
     portallink.link:
         default: op
         description: Allows a user to define new PortalLinks.
