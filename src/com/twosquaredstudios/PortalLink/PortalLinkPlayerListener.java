@@ -99,7 +99,7 @@ public class PortalLinkPlayerListener extends PlayerListener {
 			}
 			if (toWorld.getEnvironment().equals(fromWorld.getEnvironment())) useDimension = false;
 		}
-		double blockRatio = useDimension ? (dimension == -1 ? 8 : 0.125) : 1;
+		double blockRatio = useDimension ? (dimension == -1 ? 0.125 : 8) : 1; // Flipped (compared to CraftBukkit) because I use dimension the other way round
 		
 		Location fromLocation = new Location(fromWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), player.getLocation().getYaw(), player.getLocation().getPitch());
 		Location toLocation = new Location(toWorld, (player.getLocation().getX() * blockRatio), player.getLocation().getY(), (player.getLocation().getZ() * blockRatio), player.getLocation().getYaw(), player.getLocation().getPitch());
