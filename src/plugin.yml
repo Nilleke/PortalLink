@@ -1,6 +1,6 @@
 name: PortalLink
 main: com.twosquaredstudios.PortalLink.PortalLink
-version: 0.3
+version: 0.4
 author: James Clarke (jrtc27)
 website: http://2squaredstudios.com/
 description: Fix Nether portal linking in alternate worlds.
@@ -8,7 +8,7 @@ commands:
     pl:
         description: Manipulate PortalLink
         usage: |
-            /<command> link [-b] [-WhichNether] <World> <OtherWorld> - "b" sets the link to work both ways. WhichNether is 0 by default - add 1 if World is a Nether world and 2 if OtherWorld is a Nether world (or 3 for both).
+            /<command> link [-b] [-WhichNether] <World> <OtherWorld> - "b" sets the link to work both ways. WhichNether is 0 by default - add 1 if World is a Nether world and 2 if OtherWorld is a Nether world (or 3 for both). If you do not, things may BREAK. You can use "\" to escape spaces.
             /<command> reload                                        - Reloads PortalLinks from links.properties.
         aliases:
         - portallink

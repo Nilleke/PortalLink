@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.bukkit.World.Environment;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -39,12 +40,21 @@ public class PortalLinkConfig {
 			Integer line = 0;
 			while ((s = in.readLine()) != null) {
 				line++;
-				if (s.trim().isEmpty()) continue;
+				int length = 0;
+				s = s.trim();
+				if (s.isEmpty()) continue;
+				if (s.endsWith("=")) length++;
 				if (s.startsWith("#")) continue;
-				String args[] = s.split("=");
-				args[0].trim();
-				args[1].trim();
-				if (args.length > 2) args[2].trim();
+				String tempArgs[] = s.split("=");
+				length += tempArgs.length;
+				String args[] = new String[length];
+				System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
+				if (length > tempArgs.length) {
+					args[length-1] = "";
+				}
+				args[0] = args[0].trim();
+				args[1] = args[1].trim();
+				if (args.length > 2) args[2] = args[2].trim();
 				boolean twoway = false;
 				if (args[1].equals("") && args.length > 2) {
 					args[1] = args[2];
@@ -69,6 +79,30 @@ public class PortalLinkConfig {
 					}
 					definedLinks.put(args[0], new PortalLinkLinkValue(args[1],whichNether));
 				}
+				Environment environmentForWorld1 = Environment.NORMAL;
+				Environment environmentForWorld2 = Environment.NORMAL;
+				switch (whichNether) {
+					case 0:
+						environmentForWorld1 = Environment.NORMAL;
+						environmentForWorld2 = Environment.NORMAL;
+						break;
+					case 1:
+						environmentForWorld1 = Environment.NETHER;
+						environmentForWorld2 = Environment.NORMAL;
+						break;
+					case 2:
+						environmentForWorld1 = Environment.NORMAL;
+						environmentForWorld2 = Environment.NETHER;
+						break;
+					case 3:
+						environmentForWorld1 = Environment.NETHER;
+						environmentForWorld2 = Environment.NETHER;
+						break;
+					default:
+						break;
+				}
+				if (!args[0].equals("")) plugin.getServer().createWorld(args[0], environmentForWorld1);
+				if (!args[1].equals("")) plugin.getServer().createWorld(args[1], environmentForWorld2);
 				if (twoway) {
 					if (whichNether == 2) {
 						whichNether--;
@@ -100,7 +134,7 @@ public class PortalLinkConfig {
 				out.write("# Links should be specified with the format World=<NetherWorld>.\n");
 				out.write("# All nether worlds MUST be surrounded by < and > as shown in the above example.\n");
 				out.write("# You can link two nethers or two normal worlds if desired.\n");
-				out.write("# By default all links are one way (left world to right world) - to link them both");
+				out.write("# By default all links are one way (left world to right world) - to link them both\n");
 				out.write("# ways, change the \"=\" to \"==\"\n");
 				out.write("# A blank link will stop a player from being able to use a portal in that world.\n");
 				out.write("# Only one link per line (extra links will be ignored).\n");
@@ -197,6 +231,34 @@ public class PortalLinkConfig {
 				plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
 			}
 			definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
+			if (sender != null) {
+				sender.sendMessage("Creating link...");
+			}
+			plugin.logInfo("Creating link...");
+			Environment environmentForWorld1 = Environment.NORMAL;
+			Environment environmentForWorld2 = Environment.NORMAL;
+			switch (whichNether) {
+				case 0:
+					environmentForWorld1 = Environment.NORMAL;
+					environmentForWorld2 = Environment.NORMAL;
+					break;
+				case 1:
+					environmentForWorld1 = Environment.NETHER;
+					environmentForWorld2 = Environment.NORMAL;
+					break;
+				case 2:
+					environmentForWorld1 = Environment.NORMAL;
+					environmentForWorld2 = Environment.NETHER;
+					break;
+				case 3:
+					environmentForWorld1 = Environment.NETHER;
+					environmentForWorld2 = Environment.NETHER;
+					break;
+				default:
+					break;
+			}
+			if (!str1.equals("")) plugin.getServer().createWorld(str1, environmentForWorld1);
+			if (!str2.equals("")) plugin.getServer().createWorld(str2, environmentForWorld2);
 			if (whichNether == 2) {
 				whichNether--;
 			} else if (whichNether == 1) {
@@ -218,6 +280,34 @@ public class PortalLinkConfig {
 				plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
 			}
 			definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
+			if (sender != null) {
+				sender.sendMessage("Creating link...");
+			}
+			plugin.logInfo("Creating link...");
+			Environment environmentForWorld1 = Environment.NORMAL;
+			Environment environmentForWorld2 = Environment.NORMAL;
+			switch (whichNether) {
+				case 0:
+					environmentForWorld1 = Environment.NORMAL;
+					environmentForWorld2 = Environment.NORMAL;
+					break;
+				case 1:
+					environmentForWorld1 = Environment.NETHER;
+					environmentForWorld2 = Environment.NORMAL;
+					break;
+				case 2:
+					environmentForWorld1 = Environment.NORMAL;
+					environmentForWorld2 = Environment.NETHER;
+					break;
+				case 3:
+					environmentForWorld1 = Environment.NETHER;
+					environmentForWorld2 = Environment.NETHER;
+					break;
+				default:
+					break;
+			}
+			if (!str1.equals("")) plugin.getServer().createWorld(str1, environmentForWorld1);
+			if (!str2.equals("")) plugin.getServer().createWorld(str2, environmentForWorld2);
 		}
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");

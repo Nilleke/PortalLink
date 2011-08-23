@@ -52,6 +52,7 @@ public class PortalLinkPlayerListener extends PlayerListener {
 				toWorld = plugin.getServer().createWorld(linkValue.getString(), environment);
 			} else {
 				event.setCancelled(true);
+				player.sendMessage("The Nether has been disabled for " + player.getWorld().getName() + ".");
 				return;
 			}
 		} else {

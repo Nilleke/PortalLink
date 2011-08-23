@@ -83,13 +83,39 @@ public class PortalLink extends JavaPlugin {
 						return false;
 					} else {
 						str1 = args[index];
+						str1 = str1.trim();
+						boolean stillEndsInBckSlsh = str1.endsWith("\\");
+						logInfo("Backslash: \\");
+						logInfo(String.valueOf(str1.charAt(str1.length() - 1)));
+						while(stillEndsInBckSlsh) {
+							index++;
+							if (args.length > index) {
+								str1 = str1.substring(0, str1.length() - 1);
+								str1 = str1.concat(" " + args[index]);
+								stillEndsInBckSlsh = str1.endsWith("\\");
+							} else {
+								return false;
+							}
+						}
 					}
 					if (args.length <= (index+1)) {
 						str2 = "";
 					} else {
 						str2 = args[index+1];
+						str2 = str2.trim();
+						boolean stillEndsInBckSlsh = str2.endsWith("\\");
+						logInfo("Backslash: \\");
+						logInfo(String.valueOf(str2.charAt(str2.length() - 1)));
+						while(stillEndsInBckSlsh) {
+							index++;
+							if (args.length > (index+1)) {
+								str2 = str2.substring(0, str2.length() - 1);
+								str2 = str2.concat(" " + args[index+1]);
+								stillEndsInBckSlsh = str2.endsWith("\\");
+							}
+						}
 					}
-					plConfig.addLink(str1.replaceAll("\"", ""), str2.replaceAll("\"", ""), (sender instanceof Player) ? sender : null, twoway, whichNether);
+					plConfig.addLink(str1, str2, (sender instanceof Player) ? sender : null, twoway, whichNether);
 					return true;
 				} else if (args[0].equals("reload") && args.length == 1) {
 					if (!sender.hasPermission("portallink.reload")) {
