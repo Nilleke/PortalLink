@@ -97,6 +97,7 @@ public class PortalLinkPlayerListener extends PlayerListener {
 					toWorld = plugin.getServer().createWorld(fromWorld.getName() + "_nether", Environment.NETHER);
 				}
 			}
+			if (toWorld.getEnvironment().equals(fromWorld.getEnvironment())) useDimension = false;
 		}
 		double blockRatio = useDimension ? (dimension == -1 ? 8 : 0.125) : 1;
 		
