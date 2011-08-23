@@ -135,7 +135,7 @@ public class PortalLinkConfig {
 				out.write("# All nether worlds MUST be surrounded by < and > as shown in the above example.\n");
 				out.write("# You can link two nethers or two normal worlds if desired.\n");
 				out.write("# By default all links are one way (left world to right world) - to link them both\n");
-				out.write("# ways, change the \"=\" to \"==\"\n");
+				out.write("# ways, change the \"=\" to \"==\".\n");
 				out.write("# A blank link will stop a player from being able to use a portal in that world.\n");
 				out.write("# Only one link per line (extra links will be ignored).\n");
 				out.write("# Later links will override previous ones.\n");
