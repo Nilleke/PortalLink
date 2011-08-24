@@ -2,6 +2,8 @@ package com.twosquaredstudios.PortalLink;
 
 import java.util.Map;
 import java.util.logging.Logger;
+
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World.Environment;
 import org.bukkit.World;
@@ -52,7 +54,7 @@ public class PortalLinkPlayerListener extends PlayerListener {
 				toWorld = plugin.getServer().createWorld(linkValue.getString(), environment);
 			} else {
 				event.setCancelled(true);
-				player.sendMessage("The Nether has been disabled for " + player.getWorld().getName() + ".");
+				player.sendMessage(ChatColor.RED + "The Nether has been disabled for " + player.getWorld().getName() + ".");
 				return;
 			}
 		} else {

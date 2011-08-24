@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.bukkit.ChatColor;
 import org.bukkit.World.Environment;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -334,6 +335,109 @@ public class PortalLinkConfig {
 				sender.sendMessage("Link successfully created!");
 			}
 			plugin.logInfo("Link successfully created!");
+		}
+	}
+	
+	public void removeLink(String str1, String str2, CommandSender sender) {
+		BufferedReader in = null;
+		Writer out = null;
+		boolean removedLink = false;
+		try {
+			in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
+			String s = "";
+			out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");
+			while ((s = in.readLine()) != null) {
+				String line = s;
+				line = line.concat("\n");
+				s = s.trim();
+				if (s.isEmpty() || s.startsWith("#")) {
+					out.write(line);
+				} else {
+					int length = 0;
+					boolean twoway = false;
+					if (s.endsWith("=")) length++;
+					String tempArgs[] = s.split("=");
+					length += tempArgs.length;
+					String args[] = new String[length];
+					System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
+					if (length > tempArgs.length) {
+						args[length-1] = "";
+					}
+					args[0] = args[0].trim();
+					args[1] = args[1].trim();
+					if (args.length > 2) args[2] = args[2].trim();
+					if (args[1].equals("") && args.length > 2) {
+						twoway = true;
+						args[1] = args[2];
+					}
+					if (args[0].startsWith("<") && args[0].endsWith(">")) {
+						args[0] = args[0].substring(1, args[0].length() - 1);
+					}
+					if (args[1].startsWith("<") && args[1].endsWith(">")) {
+						args[1] = args[1].substring(1, args[1].length() - 1);
+					}
+					if ((args[0].equals(str1) && (args[1].equals(str2) || str2.isEmpty())) || (twoway && args[0].equals(str2) && args[1].equals(str1))) {
+						out.write("# Removed: " + line);
+						removedLink = true;
+					}
+				}
+			}
+			in.close();
+			out.close();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			if (sender != null) {
+				sender.sendMessage(ChatColor.RED + "Unable to find links.properties!");
+			}
+			plugin.logError("Unable to find links.properties!");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (in != null) {
+			try {
+				in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (out != null) {
+			try {
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (removedLink) {
+			File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
+			File targetFile = new File(plugin.getDataFolder() + "/links.properties");
+			if (!tempFile.renameTo(targetFile)) {
+				if (!targetFile.delete()) {
+					
+				}
+				if (!tempFile.renameTo(targetFile)) {
+					plugin.logError("Unable to rename the temporary file!");
+				} else {
+					if (sender != null) {
+						sender.sendMessage("Link successfully removed!");
+					}
+					plugin.logInfo("Link successfully removed!");
+				}
+			} else {
+				if (sender != null) {
+					sender.sendMessage("Link successfully removed!!");
+				}
+				plugin.logInfo("Link successfully removed!");
+			}
+		} else {
+			if (sender != null) {
+				sender.sendMessage(ChatColor.RED + "No matching links were found!");
+			}
+			plugin.logWarning("No matching links were found!");
+			File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
+			if (!tempFile.delete()) {
+				plugin.logError("Unable to delete the temporary file!");
+			}
 		}
 	}
 }

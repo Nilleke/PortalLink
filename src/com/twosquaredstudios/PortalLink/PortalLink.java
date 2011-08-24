@@ -6,20 +6,16 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginLoader;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.PluginManager;
 
-@SuppressWarnings("unused")
 public class PortalLink extends JavaPlugin {
 	private PluginDescriptionFile pdfFile;
 	private final PortalLinkPlayerListener plPlayerListener = new PortalLinkPlayerListener(this);
@@ -35,7 +31,7 @@ public class PortalLink extends JavaPlugin {
 				if (args.length == 0) return false;
 				if (args[0].equalsIgnoreCase("link") && args.length > 1) {
 					if (!sender.hasPermission("portallink.link")) {
-						sender.sendMessage(ChatColor.RED + "You do not have permission to define PortalLink links.");
+						sender.sendMessage(ChatColor.RED + "You do not have permission to define PortalLinks.");
 						return true;
 					}
 					boolean twoway = false;
@@ -85,8 +81,6 @@ public class PortalLink extends JavaPlugin {
 						str1 = args[index];
 						str1 = str1.trim();
 						boolean stillEndsInBckSlsh = str1.endsWith("\\");
-						logInfo("Backslash: \\");
-						logInfo(String.valueOf(str1.charAt(str1.length() - 1)));
 						while(stillEndsInBckSlsh) {
 							index++;
 							if (args.length > index) {
@@ -104,8 +98,6 @@ public class PortalLink extends JavaPlugin {
 						str2 = args[index+1];
 						str2 = str2.trim();
 						boolean stillEndsInBckSlsh = str2.endsWith("\\");
-						logInfo("Backslash: \\");
-						logInfo(String.valueOf(str2.charAt(str2.length() - 1)));
 						while(stillEndsInBckSlsh) {
 							index++;
 							if (args.length > (index+1)) {
@@ -116,6 +108,44 @@ public class PortalLink extends JavaPlugin {
 						}
 					}
 					plConfig.addLink(str1, str2, (sender instanceof Player) ? sender : null, twoway, whichNether);
+					return true;
+				} else if (args[0].equals("unlink") && args.length > 1) {
+					if (!sender.hasPermission("portallink.unlink")) {
+						sender.sendMessage(ChatColor.RED + "You do not have permission to remove PortalLinks.");
+						return true;
+					}
+					int index = 1;
+					String str1;
+					String str2;
+					str1 = args[index];
+					str1 = str1.trim();
+					boolean stillEndsInBckSlsh = str1.endsWith("\\");
+					while(stillEndsInBckSlsh) {
+						index++;
+						if (args.length > index) {
+							str1 = str1.substring(0, str1.length() - 1);
+							str1 = str1.concat(" " + args[index]);
+							stillEndsInBckSlsh = str1.endsWith("\\");
+						} else {
+							return false;
+						}
+					}
+					if (args.length <= (index+1)) {
+						str2 = "";
+					} else {
+						str2 = args[index+1];
+						str2 = str2.trim();
+						boolean stillEndsInBckSlsh1 = str2.endsWith("\\");
+						while(stillEndsInBckSlsh1) {
+							index++;
+							if (args.length > (index+1)) {
+								str2 = str2.substring(0, str2.length() - 1);
+								str2 = str2.concat(" " + args[index+1]);
+								stillEndsInBckSlsh1 = str2.endsWith("\\");
+							}
+						}
+					}
+					plConfig.removeLink(str1, str2, (sender instanceof Player) ? sender : null);
 					return true;
 				} else if (args[0].equals("reload") && args.length == 1) {
 					if (!sender.hasPermission("portallink.reload")) {
@@ -175,14 +205,14 @@ public class PortalLink extends JavaPlugin {
 	}
 	
 	public void logInfo(String string) {
-		log.info(pdfFile.getName() + " " + string);
+		log.info("[" + pdfFile.getName() + "] " + string);
 	}
 	
 	public void logWarning(String string) {
-		log.warning(pdfFile.getName() + " " + string);
+		log.warning("[" + pdfFile.getName() + "] " + string);
 	}
 	
 	public void logError(String string) {
-		log.severe(pdfFile.getName() + " " + string);
+		log.severe("[" + pdfFile.getName() + "] " + string);
 	}
 }
