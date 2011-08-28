@@ -34,22 +34,22 @@ public class PortalLinkPlayerListener extends PlayerListener {
 			PortalLinkLinkValue linkValue = definedLinks.get(fromWorld.getName());
 			switch (linkValue.getWhichNether()) {
 				case 0:
+					dimension = -1;
 					useDimension = false;
 					break;
 				case 1:
-					// Everything set to this by default
+					dimension = -1;
 					break;
 				case 2:
-					dimension = -1;
+					// Everything set to this by default
 					break;
 				case 3:
-					dimension = -1;
 					useDimension = false;
 					break;
 				default:
 					break;
 			}
-			Environment environment = dimension == -1 ? Environment.NETHER : Environment.NORMAL;
+			Environment environment = dimension == -1 ? Environment.NORMAL : Environment.NETHER;
 			if (!linkValue.getString().equals("")) {
 				toWorld = plugin.getServer().createWorld(linkValue.getString(), environment);
 			} else {
@@ -101,7 +101,7 @@ public class PortalLinkPlayerListener extends PlayerListener {
 			}
 			if (toWorld.getEnvironment().equals(fromWorld.getEnvironment())) useDimension = false;
 		}
-		double blockRatio = useDimension ? (dimension == -1 ? 0.125 : 8) : 1; // Flipped (compared to CraftBukkit) because I use dimension the other way round
+		double blockRatio = useDimension ? (dimension == -1 ? 8 : 0.125) : 1;
 		
 		Location fromLocation = new Location(fromWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), player.getLocation().getYaw(), player.getLocation().getPitch());
 		Location toLocation = new Location(toWorld, (player.getLocation().getX() * blockRatio), player.getLocation().getY(), (player.getLocation().getZ() * blockRatio), player.getLocation().getYaw(), player.getLocation().getPitch());

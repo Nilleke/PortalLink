@@ -429,6 +429,8 @@ public class PortalLinkConfig {
 				}
 				plugin.logInfo("Link successfully removed!");
 			}
+			definedLinks.clear();
+			loadUserDefinedLinks();
 		} else {
 			if (sender != null) {
 				sender.sendMessage(ChatColor.RED + "No matching links were found!");
