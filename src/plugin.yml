@@ -1,6 +1,6 @@
 name: PortalLink
 main: com.twosquaredstudios.PortalLink.PortalLink
-version: 0.6.1
+version: 0.6.2
 author: James Clarke (jrtc27)
 website: http://2squaredstudios.com/
 description: Fix Nether portal linking in alternate worlds.
