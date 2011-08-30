@@ -122,6 +122,13 @@ public class PortalLinkConfig {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
+			File directory = plugin.getDataFolder();
+			if (!directory.isDirectory()) {
+				if (!directory.mkdir()) {
+					plugin.logError("Unable to create plugin data directory!");
+					return;
+				}
+			}
 			try {
 				Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8");
 				out.write("# Place any custom links inside this file.\n");
@@ -140,7 +147,7 @@ public class PortalLinkConfig {
 			} catch (UnsupportedEncodingException e1) {
 				e1.printStackTrace();
 			} catch (FileNotFoundException e1) {
-				
+				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
