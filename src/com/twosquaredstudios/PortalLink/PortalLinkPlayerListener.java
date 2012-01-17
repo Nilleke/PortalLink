@@ -1,5 +1,6 @@
 package com.twosquaredstudios.PortalLink;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -10,24 +11,46 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerListener;
 import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerPortalEvent.PortalType;
 
 public class PortalLinkPlayerListener extends PlayerListener {
 	private final PortalLink plugin;
+	private Method portalTypeMethod = null;
 	Logger log = Logger.getLogger("Minecraft");
 	
 	public PortalLinkPlayerListener(PortalLink instance) {
 		plugin = instance;
+		Method m = null;
+		try {
+			m = PlayerPortalEvent.class.getMethod("getPortalType");
+		} catch (NoSuchMethodException e) {
+			
+		}
+		portalTypeMethod = m;
 	}
 	
 	public void onPlayerPortal(PlayerPortalEvent event) {
 		if (event.isCancelled()) {
 			return;
 		}
+		if (event.getTo() != null) {
+			if (event.getTo().getWorld().getEnvironment().getId() == 1) {
+				return;
+			}
+		}
+		Player player = event.getPlayer();
 		World fromWorld = null;
 		World toWorld = null;
 		int dimension = 0;
+		PortalType portalType = PortalType.UNKNOWN;
+		try {
+			portalType = (PortalType)portalTypeMethod.invoke(event);
+		} catch (Exception e) {
+			
+		}
+		player.sendMessage("portalType: " + portalType);
+		if (portalType == PortalType.END_PORTAL) return;
 		boolean useDimension = true;
-		Player player = event.getPlayer();
 		Map<String,PortalLinkLinkValue> definedLinks = plugin.getPortalLinkConfig().getUserDefinedLinks();
 		if (definedLinks.containsKey(player.getWorld().getName())) {
 			fromWorld = player.getWorld();
@@ -107,5 +130,12 @@ public class PortalLinkPlayerListener extends PlayerListener {
 		Location toLocation = new Location(toWorld, (player.getLocation().getX() * blockRatio), player.getLocation().getY(), (player.getLocation().getZ() * blockRatio), player.getLocation().getYaw(), player.getLocation().getPitch());
 		event.setTo(toLocation);
 		event.setFrom(fromLocation);
+	}
+	
+	private String replaceLast(String string, String from, String to) {
+	     int lastIndex = string.lastIndexOf(from);
+	     if (lastIndex < 0) return string;
+	     String tail = string.substring(lastIndex).replaceFirst(from, to);
+	     return string.substring(0, lastIndex) + tail;
 	}
 }
