@@ -20,6 +20,7 @@ permissions:
             portallink.link: true
             portallink.unlink: true
             portallink.reload: true
+            portallink.notify: true
     portallink.link:
         default: op
         description: Allows a user to define new PortalLinks.
@@ -29,3 +30,6 @@ permissions:
     portallink.reload:
         default: op
         description: Allows a user to reload PortalLink's links.
+    portallink.notify:
+        default: op
+        description: Allows a user to receive PortalLink admin notifications.
