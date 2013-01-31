@@ -149,7 +149,7 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 				return true;
 			}
 			this.plugin.getPortalLinkConfig().load();
-			this.plugin.broadcastAdminMessage("PortalLink has been reloaded!", true);
+			this.plugin.broadcastReload(sender);
 			return true;
 		}
 		return false;
