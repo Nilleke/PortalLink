@@ -1,0 +1,7 @@
+# PortalLink Config
+#
+# Bukkit currently has limited API support for non-player entities using portals,
+# so until it is implemented I suggest disabling that feature, as otherwise entities
+# will go to the wrong worlds.
+#
+deny-entity-portal: true

@@ -1,8 +1,8 @@
-name: PortalLink
-main: com.twosquaredstudios.PortalLink.PortalLink
-version: 0.6.2
+name: ${project.name}
+main: com.jrtc27.portallink.PortalLink
+version: ${project.version} (Git ${git.commit.info}, Build ${project.build.number})
 author: James Clarke (jrtc27)
-website: http://2squaredstudios.com/
+website: http://dev.bukkit.org/server-mods/portallink
 description: Fix Nether portal linking in alternate worlds.
 commands:
     pl:

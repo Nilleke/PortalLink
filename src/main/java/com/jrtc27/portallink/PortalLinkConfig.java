@@ -12,42 +12,50 @@
  * limitations under the License.
  */
 
-package com.twosquaredstudios.PortalLink;
+package com.jrtc27.portallink;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World.Environment;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.MemoryConfiguration;
 
 public class PortalLinkConfig {
 	private final PortalLink plugin;
-	private Map<String,PortalLinkLinkValue> definedLinks = new HashMap<String,PortalLinkLinkValue>();
+	private Map<String, PortalLinkLinkValue> definedLinks = new HashMap<String, PortalLinkLinkValue>();
+	private boolean denyEntityPortal;
 	//private LinkedList<String> overriddenLines = new LinkedList<String>();
-	
-	public PortalLinkConfig(PortalLink instance) {
-		plugin = instance;
+
+	public PortalLinkConfig(final PortalLink plugin) {
+		this.plugin = plugin;
 	}
-	
-	public Map<String,PortalLinkLinkValue> getUserDefinedLinks() {
+
+	public Map<String, PortalLinkLinkValue> getUserDefinedLinks() {
 		return definedLinks;
 	}
-	
-	public void loadUserDefinedLinks() {
-		definedLinks.clear();
+
+	public boolean denyEntityPortal() {
+		return this.denyEntityPortal;
+	}
+
+	public void load() {
+		this.loadConfig();
+		this.loadUserDefinedLinks();
+	}
+
+	private void loadConfig() {
+		this.plugin.saveDefaultConfig();
+		final MemoryConfiguration config = this.plugin.getConfig();
+		this.denyEntityPortal = config.getBoolean("deny-entity-portal", true);
+	}
+
+	private void loadUserDefinedLinks() {
+		this.definedLinks.clear();
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
+			final BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
 			String s = "";
 			Integer line = 0;
 			while ((s = in.readLine()) != null) {
@@ -57,22 +65,22 @@ public class PortalLinkConfig {
 				if (s.isEmpty()) continue;
 				if (s.endsWith("=")) length++;
 				if (s.startsWith("#")) continue;
-				String tempArgs[] = s.split("=");
+				final String tempArgs[] = s.split("=");
 				length += tempArgs.length;
-				String args[] = new String[length];
+				final String args[] = new String[length];
 				System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
 				if (length > tempArgs.length) {
-					args[length-1] = "";
+					args[length - 1] = "";
 				}
 				args[0] = args[0].trim();
 				args[1] = args[1].trim();
 				if (args.length > 2) args[2] = args[2].trim();
-				boolean twoway = false;
+				boolean twoWay = false;
 				if (args[1].equals("") && args.length > 2) {
 					args[1] = args[2];
-					twoway = true;
+					twoWay = true;
 				}
-				if (args.length > (twoway ? 3 : 2)) {
+				if (args.length > (twoWay ? 3 : 2)) {
 					plugin.logWarning("Only one link can be specified per line - ignoring all other links on the line.");
 					//overriddenLines.add(s);
 				}
@@ -89,7 +97,7 @@ public class PortalLinkConfig {
 					if (definedLinks.containsKey(args[0])) {
 						plugin.logWarning("Overriding previous link for \"" + args[0] + "\".");
 					}
-					definedLinks.put(args[0], new PortalLinkLinkValue(args[1],whichNether));
+					definedLinks.put(args[0], new PortalLinkLinkValue(args[1], whichNether));
 				}
 				Environment environmentForWorld1 = Environment.NORMAL;
 				Environment environmentForWorld2 = Environment.NORMAL;
@@ -113,9 +121,9 @@ public class PortalLinkConfig {
 					default:
 						break;
 				}
-				if (!args[0].equals("")) plugin.getServer().createWorld(args[0], environmentForWorld1);
-				if (!args[1].equals("")) plugin.getServer().createWorld(args[1], environmentForWorld2);
-				if (twoway) {
+				if (!args[0].equals("")) plugin.createWorld(args[0], environmentForWorld1);
+				if (!args[1].equals("")) plugin.createWorld(args[1], environmentForWorld2);
+				if (twoWay) {
 					if (whichNether == 2) {
 						whichNether--;
 					} else if (whichNether == 1) {
@@ -136,7 +144,7 @@ public class PortalLinkConfig {
 			File directory = plugin.getDataFolder();
 			if (!directory.isDirectory()) {
 				if (!directory.mkdir()) {
-					plugin.logError("Unable to create plugin data directory!");
+					plugin.logSevere("Unable to create plugin data directory!");
 					return;
 				}
 			}
@@ -184,7 +192,7 @@ public class PortalLinkConfig {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			plugin.logError("The save file could not be accessed!");
+			plugin.logSevere("The save file could not be accessed!");
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -192,15 +200,15 @@ public class PortalLinkConfig {
 		File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
 		File targetFile = new File(plugin.getDataFolder() + "/links.properties");
 		if (!tempFile.renameTo(targetFile)) {
-			plugin.logError("Unable to rename the temporary file!");
+			plugin.logSevere("Unable to rename the temporary file!");
 		}
 	}
 	*/
-	
+
 	public void addLink(String str1, String str2, int whichNether) {
 		addLink(str1, str2, null, false, whichNether);
 	}
-	
+
 	public void addLink(String str1, String str2, CommandSender sender, boolean twoway, int whichNether) {
 		String outStr = "";
 		try {
@@ -213,7 +221,7 @@ public class PortalLinkConfig {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -270,8 +278,8 @@ public class PortalLinkConfig {
 				default:
 					break;
 			}
-			if (!str1.equals("")) plugin.getServer().createWorld(str1, environmentForWorld1);
-			if (!str2.equals("")) plugin.getServer().createWorld(str2, environmentForWorld2);
+			if (!str1.equals("")) plugin.createWorld(str1, environmentForWorld1);
+			if (!str2.equals("")) plugin.createWorld(str2, environmentForWorld2);
 			if (whichNether == 2) {
 				whichNether--;
 			} else if (whichNether == 1) {
@@ -319,8 +327,8 @@ public class PortalLinkConfig {
 				default:
 					break;
 			}
-			if (!str1.equals("")) plugin.getServer().createWorld(str1, environmentForWorld1);
-			if (!str2.equals("")) plugin.getServer().createWorld(str2, environmentForWorld2);
+			if (!str1.equals("")) plugin.createWorld(str1, environmentForWorld1);
+			if (!str2.equals("")) plugin.createWorld(str2, environmentForWorld2);
 		}
 		try {
 			Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");
@@ -329,7 +337,7 @@ public class PortalLinkConfig {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			plugin.logError("The save file could not be accessed!");
+			plugin.logSevere("The save file could not be accessed!");
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -338,10 +346,10 @@ public class PortalLinkConfig {
 		File targetFile = new File(plugin.getDataFolder() + "/links.properties");
 		if (!tempFile.renameTo(targetFile)) {
 			if (!targetFile.delete()) {
-				
+
 			}
 			if (!tempFile.renameTo(targetFile)) {
-				plugin.logError("Unable to rename the temporary file!");
+				plugin.logSevere("Unable to rename the temporary file!");
 			} else {
 				if (sender != null) {
 					sender.sendMessage("Link successfully created!");
@@ -355,7 +363,7 @@ public class PortalLinkConfig {
 			plugin.logInfo("Link successfully created!");
 		}
 	}
-	
+
 	public void removeLink(String str1, String str2, CommandSender sender) {
 		BufferedReader in = null;
 		Writer out = null;
@@ -379,7 +387,7 @@ public class PortalLinkConfig {
 					String args[] = new String[length];
 					System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
 					if (length > tempArgs.length) {
-						args[length-1] = "";
+						args[length - 1] = "";
 					}
 					args[0] = args[0].trim();
 					args[1] = args[1].trim();
@@ -408,7 +416,7 @@ public class PortalLinkConfig {
 			if (sender != null) {
 				sender.sendMessage(ChatColor.RED + "Unable to find links.properties!");
 			}
-			plugin.logError("Unable to find links.properties!");
+			plugin.logSevere("Unable to find links.properties!");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -431,10 +439,10 @@ public class PortalLinkConfig {
 			File targetFile = new File(plugin.getDataFolder() + "/links.properties");
 			if (!tempFile.renameTo(targetFile)) {
 				if (!targetFile.delete()) {
-					
+
 				}
 				if (!tempFile.renameTo(targetFile)) {
-					plugin.logError("Unable to rename the temporary file!");
+					plugin.logSevere("Unable to rename the temporary file!");
 				} else {
 					if (sender != null) {
 						sender.sendMessage("Link successfully removed!");
@@ -456,7 +464,7 @@ public class PortalLinkConfig {
 			plugin.logWarning("No matching links were found!");
 			File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
 			if (!tempFile.delete()) {
-				plugin.logError("Unable to delete the temporary file!");
+				plugin.logSevere("Unable to delete the temporary file!");
 			}
 		}
 	}
