@@ -28,6 +28,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPortalEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
@@ -148,13 +149,21 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 				return true;
 			}
 			this.plugin.getPortalLinkConfig().load();
-			if (sender instanceof Player) {
-				sender.sendMessage("PortalLink has been reloaded!");
-			}
-			this.plugin.logInfo("PortalLink has been reloaded!");
+			this.plugin.broadcastAdminMessage("PortalLink has been reloaded!", true);
 			return true;
 		}
 		return false;
+	}
+
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onPlayerJoin(final PlayerJoinEvent event) {
+		final Player player = event.getPlayer();
+		if (player.hasPermission("portallink.notify")) {
+			final String adminMessage = this.plugin.adminMessage;
+			if (adminMessage != null) {
+				player.sendMessage(adminMessage);
+			}
+		}
 	}
 
 	@EventHandler(priority =  EventPriority.HIGHEST, ignoreCancelled = true)

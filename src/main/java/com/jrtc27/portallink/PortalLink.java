@@ -14,21 +14,37 @@
 
 package com.jrtc27.portallink;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 public class PortalLink extends JavaPlugin {
 	private PluginDescriptionFile pdf;
 	private final PortalLinkListener plListener = new PortalLinkListener(this);
 	public final PortalLinkConfig plConfig = new PortalLinkConfig(this);
 	private Logger logger;
+	private BukkitTask updateCheckTask;
+	public String adminMessage = null;
+	private String version = null;
+	private String jenkinsBuild = null;
 
 	@Override
 	public void onEnable() {
@@ -36,8 +52,15 @@ public class PortalLink extends JavaPlugin {
 		this.getCommand("pl").setExecutor(plListener);
 		this.pdf = this.getDescription();
 		this.plConfig.load();
+		this.loadVersionInfo();
 		final PluginManager pluginManager = this.getServer().getPluginManager();
 		pluginManager.registerEvents(plListener, this);
+		this.updateCheckTask = this.getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+			@Override
+			public void run() {
+				checkForUpdates();
+			}
+		}, 20, 432000); // 20 ticks * 60 seconds * 60 minutes * 6 hours => 6 hours in ticks
 		this.logInfo(pdf.getFullName() + " is enabled!");
 	}
 
@@ -48,6 +71,10 @@ public class PortalLink extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		//plConfig.saveUserDefinedLinks();
+		if (this.updateCheckTask != null) {
+			this.updateCheckTask.cancel();
+			this.updateCheckTask = null;
+		}
 		this.logger.info(pdf.getFullName() + " is disabled!");
 	}
 
@@ -61,6 +88,10 @@ public class PortalLink extends JavaPlugin {
 
 	public World getWorld(final String name) {
 		return this.getServer().getWorld(name);
+	}
+
+	public String getVersion() {
+		return this.pdf.getVersion();
 	}
 
 	public void log(final Level level, final String message) {
@@ -78,4 +109,113 @@ public class PortalLink extends JavaPlugin {
 	public void logSevere(final String message) {
 		this.log(Level.SEVERE, message);
 	}
+
+	public void broadcastReload(final CommandSender sender) {
+		final String message = ChatColor.YELLOW + this.pdf.getName() + " version " + this.getVersion() + " reloaded!";
+
+		this.getServer().getConsoleSender().sendMessage(message);
+
+		for (final Player player : this.getServer().getOnlinePlayers()) {
+			if (player.hasPermission("portallink.notify") || player.equals(sender)) {
+				player.sendMessage(message);
+			}
+		}
+	}
+
+	public void broadcastAdminMessage(final String message, final boolean sendToConsole) {
+		if (sendToConsole) {
+			this.getServer().getConsoleSender().sendMessage(message);
+		}
+
+		for (final Player player : this.getServer().getOnlinePlayers()) {
+			if (player.hasPermission("portallink.notify")) {
+				player.sendMessage(message);
+			}
+		}
+	}
+
+	public void loadVersionInfo() {
+		final InputStream stream = this.getResource("version-info.yml");
+		if (stream != null) {
+			final FileConfiguration config = new YamlConfiguration();
+			boolean loaded = true;
+			try {
+				config.load(stream);
+			} catch (Exception e) {
+				e.printStackTrace();
+				loaded = false;
+			}
+			if (loaded) {
+				this.version = config.getString("version");
+				this.jenkinsBuild = config.getString("jenkins-build");
+				return;
+			}
+		}
+		this.version = null;
+		this.jenkinsBuild = null;
+	}
+
+	public void checkForUpdates() {
+		if (this.version == null || this.version.equalsIgnoreCase("${project.version}")) {
+			this.logSevere("Error reading version info file!");
+			this.adminMessage = null;
+			return;
+		}
+		if (this.version.endsWith("-SNAPSHOT")) {
+			this.logWarning("You are currently running a snapshot version - please be aware that there may be (serious) bugs!");
+			this.adminMessage = null;
+			return;
+		}
+
+		BufferedReader reader = null;
+		try {
+			final URLConnection connection = new URL("http://jrtc27.github.com/PortalLink/version").openConnection();
+			connection.setConnectTimeout(10000);
+			connection.setReadTimeout(10000);
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			final String version = reader.readLine();
+			if (version != null) {
+				if (isVersionNewer(this.version, version)) {
+					final String message = "A new recommended version (" + version + ") is available - please update for new features and fixes!";
+					this.logInfo(message);
+					final String playerMessage = "[PortalLink] " + message;
+					this.broadcastAdminMessage(playerMessage, false);
+					this.adminMessage = playerMessage;
+				} else {
+					this.adminMessage = null;
+				}
+				return;
+			}
+		} catch (Exception e) {
+			// Do nothing
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					// Do nothing
+				}
+			}
+		}
+		this.logWarning("Unable to check if plugin was up to date!");
+	}
+
+	private boolean isVersionNewer(final String current, final String reported) {
+		final String[] currentElements = current.split("\\.");
+		final String[] reportedElements = reported.split("\\.");
+		final int length = Math.min(currentElements.length, reportedElements.length);
+		for (int i = 0; i < length; i++) {
+			final int currentInt, reportedInt;
+			try {
+				currentInt = Integer.valueOf(currentElements[i]);
+				reportedInt = Integer.valueOf(reportedElements[i]);
+			} catch (NumberFormatException e) {
+				return true;
+			}
+			if (reportedInt > currentInt) return true;
+			else if (reportedInt < currentInt) return false;
+		}
+		return reportedElements.length > currentElements.length;
+	}
+
 }
