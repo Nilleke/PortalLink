@@ -17,6 +17,7 @@ package com.jrtc27.portallink;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
 import org.bukkit.World.Environment;
@@ -24,17 +25,21 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.MemoryConfiguration;
 
 public class PortalLinkConfig {
+	private static final String LINKS_FILE_NAME = "links.properties";
+	private static final String LINKS_TEMP_FILE_NAME = LINKS_FILE_NAME + ".tmp";
+	private final Pattern LINK_PATTERN = Pattern.compile("(^(?==)|(?<==)(?=[^=])|(?<=[^=])(?==)|(?<==)$)");
+
 	private final PortalLink plugin;
+
 	private Map<String, PortalLinkLinkValue> definedLinks = new HashMap<String, PortalLinkLinkValue>();
 	private boolean denyEntityPortal;
-	//private LinkedList<String> overriddenLines = new LinkedList<String>();
 
 	public PortalLinkConfig(final PortalLink plugin) {
 		this.plugin = plugin;
 	}
 
 	public Map<String, PortalLinkLinkValue> getUserDefinedLinks() {
-		return definedLinks;
+		return this.definedLinks;
 	}
 
 	public boolean denyEntityPortal() {
@@ -55,82 +60,52 @@ public class PortalLinkConfig {
 	private void loadUserDefinedLinks() {
 		this.definedLinks.clear();
 		try {
-			final BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
-			String s = "";
-			Integer line = 0;
+			final BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME)), "UTF-8"));
+			String s;
+			int line = 0;
 			while ((s = in.readLine()) != null) {
 				line++;
-				int length = 0;
 				s = s.trim();
 				if (s.isEmpty()) continue;
-				if (s.endsWith("=")) length++;
 				if (s.startsWith("#")) continue;
-				final String tempArgs[] = s.split("=");
-				length += tempArgs.length;
-				final String args[] = new String[length];
-				System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
-				if (length > tempArgs.length) {
-					args[length - 1] = "";
+				final String[] args = LINK_PATTERN.split(s, -1); // -1 means we get the trailing space
+				if (args.length < 3) {
+					this.plugin.logWarning("Missing \"=\" sign(s) on line " + line + " of " + LINKS_FILE_NAME + ".");
+				} else if (args.length > 3) {
+					this.plugin.logWarning("Only one link can be specified per line - ignoring all other links on line " + line + " of " + LINKS_FILE_NAME + ".");
 				}
 				args[0] = args[0].trim();
-				args[1] = args[1].trim();
-				if (args.length > 2) args[2] = args[2].trim();
-				boolean twoWay = false;
-				if (args[1].equals("") && args.length > 2) {
-					args[1] = args[2];
-					twoWay = true;
-				}
-				if (args.length > (twoWay ? 3 : 2)) {
-					plugin.logWarning("Only one link can be specified per line - ignoring all other links on the line.");
-					//overriddenLines.add(s);
-				}
+				args[2] = args[2].trim();
+				boolean twoWay = args[1].equals("==");
 				int whichNether = 0;
 				if (args[0].startsWith("<") && args[0].endsWith(">")) {
 					whichNether |= 1;
 					args[0] = args[0].substring(1, args[0].length() - 1);
 				}
-				if (args[1].startsWith("<") && args[1].endsWith(">")) {
+				if (args[2].startsWith("<") && args[2].endsWith(">")) {
 					whichNether |= 2;
-					args[1] = args[1].substring(1, args[1].length() - 1);
+					args[2] = args[2].substring(1, args[2].length() - 1);
 				}
-				if (!args[0].equals("")) {
-					if (definedLinks.containsKey(args[0])) {
-						plugin.logWarning("Overriding previous link for \"" + args[0] + "\".");
-					}
-					definedLinks.put(args[0], new PortalLinkLinkValue(args[1], whichNether));
-				}
-				final Environment environmentForWorld1 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
-				final Environment environmentForWorld2 = (whichNether & 2) == 0 ? Environment.NORMAL : Environment.NETHER;
-				if (!args[0].equals("")) plugin.createWorld(args[0], environmentForWorld1);
-				if (!args[1].equals("")) plugin.createWorld(args[1], environmentForWorld2);
-				if (twoWay) {
-					whichNether = (whichNether & 1) << 1 | (whichNether & 2) >> 1; // Swap bits 0 and 1
-					if (!args[1].equals("")) {
-						if (definedLinks.containsKey(args[1])) {
-							plugin.logWarning("Overriding previous link for \"" + args[1] + "\".");
-						}
-						definedLinks.put(args[1], new PortalLinkLinkValue(args[0], whichNether));
-					}
-				}
+				this.addLink(args[0], args[2], null, twoWay, whichNether, false);
 			}
 			in.close();
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			File directory = plugin.getDataFolder();
+			File directory = this.plugin.getDataFolder();
 			if (!directory.isDirectory()) {
 				if (!directory.mkdir()) {
-					plugin.logSevere("Unable to create plugin data directory!");
+					this.plugin.logSevere("Unable to create plugin data directory!");
 					return;
 				}
 			}
 			try {
-				Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8");
+				Writer out = new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME)), "UTF-8");
 				out.write("# Place any custom links inside this file.\n");
 				out.write("# Any world will be automatically linked with its name followed by \"_nether\".\n");
 				out.write("# Links should be specified with the format World=<NetherWorld>.\n");
 				out.write("# All nether worlds MUST be surrounded by < and > as shown in the above example.\n");
-				out.write("# You can link two nethers or two normal worlds if desired.\n");
+				out.write("# You can link two nether worlds or two normal worlds if desired.\n");
 				out.write("# By default all links are one way (left world to right world) - to link them both\n");
 				out.write("# ways, change the \"=\" to \"==\".\n");
 				out.write("# A blank link will stop a player from being able to use a portal in that world.\n");
@@ -150,193 +125,81 @@ public class PortalLinkConfig {
 			e.printStackTrace();
 		}
 	}
-	/*
-	public void saveUserDefinedLinks() {
-		String outStr = "";
-		for (String string : overriddenLines) {
-			outStr = outStr.concat(string + "\n");
+
+	public void addLink(final String str1, final String str2, final CommandSender sender, final boolean twoWay, int whichNether, final boolean announceCreate) {
+		if (!str1.equals("")) {
+			if (this.definedLinks.containsKey(str1)) {
+				if (sender != null) {
+					sender.sendMessage("Overriding previous link for \"" + str1 + "\".");
+				}
+				this.plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
+			}
+			this.definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
 		}
-		Iterator<Map.Entry<String,String>> iterator = definedLinks.entrySet().iterator();
-		while (iterator.hasNext()) {
-			Map.Entry<String,String> entry = iterator.next();
-			outStr = outStr.concat(entry.getKey() + "=" + entry.getValue() + "\n");
+		if (announceCreate) {
+			if (sender != null) {
+				sender.sendMessage("Creating link...");
+			}
+			this.plugin.logInfo("Creating link...");
 		}
+		final Environment environmentForWorld1 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
+		final Environment environmentForWorld2 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
+		if (!str1.equals("")) this.plugin.createWorld(str1, environmentForWorld1);
+		if (!str2.equals("")) this.plugin.createWorld(str2, environmentForWorld2);
+		if (twoWay) {
+			whichNether = (whichNether & 1) << 1 | (whichNether & 2) >> 1; // Swap bits 0 and 1
+			if (!str2.equals("")) {
+				if (this.definedLinks.containsKey(str2)) {
+					if (sender != null) {
+						sender.sendMessage("Overriding previous link for \"" + str2 + "\".");
+					}
+					this.plugin.logWarning("Overriding previous link for \"" + str2 + "\".");
+				}
+				this.definedLinks.put(str2, new PortalLinkLinkValue(str1, whichNether));
+			}
+		}
+	}
+
+	public void addLinkAndSave(String str1, String str2, final CommandSender sender, final boolean twoWay, int whichNether) {
+		this.addLink(str1, str2, sender, twoWay, whichNether, true);
+		if ((whichNether & 1) != 0) {
+			str1 = "<" + str1 + ">";
+		}
+		if ((whichNether & 2) != 0) {
+			str2 = "<" + str2 + ">";
+		}
+		final String outStr = "\n" + str1 + (twoWay ? "==" : "=") + str2;
 		try {
-			Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");
+			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME), true), "UTF-8"));
 			out.write(outStr);
 			out.close();
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			plugin.logSevere("The save file could not be accessed!");
+			this.plugin.logSevere("The save file could not be accessed!");
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
-		File targetFile = new File(plugin.getDataFolder() + "/links.properties");
-		if (!tempFile.renameTo(targetFile)) {
-			plugin.logSevere("Unable to rename the temporary file!");
-		}
-	}
-	*/
-
-	public void addLink(String str1, String str2, int whichNether) {
-		addLink(str1, str2, null, false, whichNether);
-	}
-
-	public void addLink(String str1, String str2, CommandSender sender, boolean twoway, int whichNether) {
-		String outStr = "";
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
-			String s = "";
-			while ((s = in.readLine()) != null) {
-				outStr = outStr.concat(s + "\n");
-			}
-			in.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		String str1Mod = str1;
-		String str2Mod = str2;
-		switch (whichNether) {
-			case 0:
-				break;
-			case 1:
-				str1Mod = "<" + str1Mod + ">";
-				break;
-			case 2:
-				str2Mod = "<" + str2Mod + ">";
-				break;
-			case 3:
-				str1Mod = "<" + str1Mod + ">";
-				str2Mod = "<" + str2Mod + ">";
-				break;
-			default:
-				break;
-		}
-		if (twoway) {
-			outStr = outStr.concat(str1Mod + "==" + str2Mod + "\n");
-			if (definedLinks.containsKey(str1)) {
-				if (sender != null) {
-					sender.sendMessage("Overriding previous link for \"" + str1 + "\".");
-				}
-				plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
-			}
-			definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
-			if (sender != null) {
-				sender.sendMessage("Creating link...");
-			}
-			plugin.logInfo("Creating link...");
-			Environment environmentForWorld1 = Environment.NORMAL;
-			Environment environmentForWorld2 = Environment.NORMAL;
-			switch (whichNether) {
-				case 0:
-					environmentForWorld1 = Environment.NORMAL;
-					environmentForWorld2 = Environment.NORMAL;
-					break;
-				case 1:
-					environmentForWorld1 = Environment.NETHER;
-					environmentForWorld2 = Environment.NORMAL;
-					break;
-				case 2:
-					environmentForWorld1 = Environment.NORMAL;
-					environmentForWorld2 = Environment.NETHER;
-					break;
-				case 3:
-					environmentForWorld1 = Environment.NETHER;
-					environmentForWorld2 = Environment.NETHER;
-					break;
-				default:
-					break;
-			}
-			if (!str1.equals("")) plugin.createWorld(str1, environmentForWorld1);
-			if (!str2.equals("")) plugin.createWorld(str2, environmentForWorld2);
-			if (whichNether == 2) {
-				whichNether--;
-			} else if (whichNether == 1) {
-				whichNether++;
-			}
-			if (definedLinks.containsKey(str2)) {
-				if (sender != null) {
-					sender.sendMessage("Overriding previous link for \"" + str2 + "\".");
-				}
-				plugin.logWarning("Overriding previous link for \"" + str2 + "\".");
-			}
-			definedLinks.put(str2, new PortalLinkLinkValue(str1, whichNether));
-		} else {
-			outStr = outStr.concat(str1Mod + "=" + str2Mod + "\n");
-			if (definedLinks.containsKey(str1)) {
-				if (sender != null) {
-					sender.sendMessage("Overriding previous link for \"" + str1 + "\".");
-				}
-				plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
-			}
-			definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
-			if (sender != null) {
-				sender.sendMessage("Creating link...");
-			}
-			plugin.logInfo("Creating link...");
-			Environment environmentForWorld1 = Environment.NORMAL;
-			Environment environmentForWorld2 = Environment.NORMAL;
-			switch (whichNether) {
-				case 0:
-					environmentForWorld1 = Environment.NORMAL;
-					environmentForWorld2 = Environment.NORMAL;
-					break;
-				case 1:
-					environmentForWorld1 = Environment.NETHER;
-					environmentForWorld2 = Environment.NORMAL;
-					break;
-				case 2:
-					environmentForWorld1 = Environment.NORMAL;
-					environmentForWorld2 = Environment.NETHER;
-					break;
-				case 3:
-					environmentForWorld1 = Environment.NETHER;
-					environmentForWorld2 = Environment.NETHER;
-					break;
-				default:
-					break;
-			}
-			if (!str1.equals("")) plugin.createWorld(str1, environmentForWorld1);
-			if (!str2.equals("")) plugin.createWorld(str2, environmentForWorld2);
-		}
-		try {
-			Writer out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");
-			out.write(outStr);
-			out.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			plugin.logSevere("The save file could not be accessed!");
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
-		File targetFile = new File(plugin.getDataFolder() + "/links.properties");
+		File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
+		File targetFile = new File(this.plugin.getDataFolder(), LINKS_FILE_NAME);
 		if (!tempFile.renameTo(targetFile)) {
 			if (!targetFile.delete()) {
 
 			}
 			if (!tempFile.renameTo(targetFile)) {
-				plugin.logSevere("Unable to rename the temporary file!");
+				this.plugin.logSevere("Unable to rename the temporary file!");
 			} else {
 				if (sender != null) {
 					sender.sendMessage("Link successfully created!");
 				}
-				plugin.logInfo("Link successfully created!");
+				this.plugin.logInfo("Link successfully created!");
 			}
 		} else {
 			if (sender != null) {
 				sender.sendMessage("Link successfully created!");
 			}
-			plugin.logInfo("Link successfully created!");
+			this.plugin.logInfo("Link successfully created!");
 		}
 	}
 
@@ -345,42 +208,30 @@ public class PortalLinkConfig {
 		Writer out = null;
 		boolean removedLink = false;
 		try {
-			in = new BufferedReader(new InputStreamReader(new FileInputStream(plugin.getDataFolder() + "/links.properties"), "UTF-8"));
-			String s = "";
-			out = new OutputStreamWriter(new FileOutputStream(plugin.getDataFolder() + "/links.properties.tmp"), "UTF-8");
+			in = new BufferedReader(new InputStreamReader(new FileInputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME)), "UTF-8"));
+			out = new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME)), "UTF-8");
+			String s;
 			while ((s = in.readLine()) != null) {
-				String line = s;
-				line = line.concat("\n");
+				final String line = s + "\n";
 				s = s.trim();
 				if (s.isEmpty() || s.startsWith("#")) {
 					out.write(line);
 				} else {
-					int length = 0;
-					boolean twoway = false;
-					if (s.endsWith("=")) length++;
-					String tempArgs[] = s.split("=");
-					length += tempArgs.length;
-					String args[] = new String[length];
-					System.arraycopy(tempArgs, 0, args, 0, tempArgs.length);
-					if (length > tempArgs.length) {
-						args[length - 1] = "";
-					}
+					final String[] args = LINK_PATTERN.split(s, -1); // -1 means we get the trailing space
 					args[0] = args[0].trim();
-					args[1] = args[1].trim();
-					if (args.length > 2) args[2] = args[2].trim();
-					if (args[1].equals("") && args.length > 2) {
-						twoway = true;
-						args[1] = args[2];
-					}
+					args[2] = args[2].trim();
+					boolean twoWay = args[1].equals("==");
 					if (args[0].startsWith("<") && args[0].endsWith(">")) {
 						args[0] = args[0].substring(1, args[0].length() - 1);
 					}
-					if (args[1].startsWith("<") && args[1].endsWith(">")) {
-						args[1] = args[1].substring(1, args[1].length() - 1);
+					if (args[2].startsWith("<") && args[2].endsWith(">")) {
+						args[2] = args[2].substring(1, args[2].length() - 1);
 					}
-					if ((args[0].equals(str1) && (args[1].equals(str2) || str2.isEmpty())) || (twoway && args[0].equals(str2) && args[1].equals(str1))) {
+					if ((args[0].equals(str1) && (args[2].equals(str2) || str2.isEmpty())) || (twoWay && args[0].equals(str2) && args[2].equals(str1))) {
 						out.write("# Removed: " + line);
 						removedLink = true;
+					} else {
+						out.write(line);
 					}
 				}
 			}
@@ -390,9 +241,9 @@ public class PortalLinkConfig {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
 			if (sender != null) {
-				sender.sendMessage(ChatColor.RED + "Unable to find links.properties!");
+				sender.sendMessage(ChatColor.RED + "Unable to find " + LINKS_FILE_NAME + "!");
 			}
-			plugin.logSevere("Unable to find links.properties!");
+			this.plugin.logSevere("Unable to find " + LINKS_FILE_NAME + "!");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -411,36 +262,36 @@ public class PortalLinkConfig {
 			}
 		}
 		if (removedLink) {
-			File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
-			File targetFile = new File(plugin.getDataFolder() + "/links.properties");
+			File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
+			File targetFile = new File(this.plugin.getDataFolder(), LINKS_FILE_NAME);
 			if (!tempFile.renameTo(targetFile)) {
 				if (!targetFile.delete()) {
-
+					// Do nothing
 				}
 				if (!tempFile.renameTo(targetFile)) {
-					plugin.logSevere("Unable to rename the temporary file!");
+					this.plugin.logSevere("Unable to rename the temporary file!");
 				} else {
 					if (sender != null) {
 						sender.sendMessage("Link successfully removed!");
 					}
-					plugin.logInfo("Link successfully removed!");
+					this.plugin.logInfo("Link successfully removed!");
 				}
 			} else {
 				if (sender != null) {
 					sender.sendMessage("Link successfully removed!!");
 				}
-				plugin.logInfo("Link successfully removed!");
+				this.plugin.logInfo("Link successfully removed!");
 			}
-			definedLinks.clear();
+			this.definedLinks.clear();
 			loadUserDefinedLinks();
 		} else {
 			if (sender != null) {
 				sender.sendMessage(ChatColor.RED + "No matching links were found!");
 			}
-			plugin.logWarning("No matching links were found!");
-			File tempFile = new File(plugin.getDataFolder() + "/links.properties.tmp");
+			this.plugin.logWarning("No matching links were found!");
+			File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
 			if (!tempFile.delete()) {
-				plugin.logSevere("Unable to delete the temporary file!");
+				this.plugin.logSevere("Unable to delete the temporary file!");
 			}
 		}
 	}

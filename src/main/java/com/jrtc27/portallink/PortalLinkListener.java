@@ -112,7 +112,7 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 					}
 				}
 			}
-			this.plugin.getPortalLinkConfig().addLink(str1, str2, (sender instanceof Player) ? sender : null, twoWay, whichNether);
+			this.plugin.getPortalLinkConfig().addLinkAndSave(str1, str2, (sender instanceof Player) ? sender : null, twoWay, whichNether);
 			return true;
 		} else if (args[0].equals("unlink") && args.length > 1) {
 			if (!sender.hasPermission("portallink.unlink")) {
