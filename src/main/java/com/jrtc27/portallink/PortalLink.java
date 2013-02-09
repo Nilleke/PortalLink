@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
+import org.bukkit.TravelAgent;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
@@ -45,14 +46,15 @@ public class PortalLink extends JavaPlugin {
 	public String adminMessage = null;
 	private String version = null;
 	private String jenkinsBuild = null;
+	public boolean supportedVersion = false;
 
 	@Override
 	public void onEnable() {
 		this.logger = this.getLogger();
-		this.getCommand("pl").setExecutor(plListener);
 		this.pdf = this.getDescription();
 		this.plConfig.load();
 		this.loadVersionInfo();
+		this.getCommand("pl").setExecutor(plListener);
 		final PluginManager pluginManager = this.getServer().getPluginManager();
 		pluginManager.registerEvents(plListener, this);
 		this.updateCheckTask = this.getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
@@ -70,7 +72,6 @@ public class PortalLink extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		//plConfig.saveUserDefinedLinks();
 		if (this.updateCheckTask != null) {
 			this.updateCheckTask.cancel();
 			this.updateCheckTask = null;

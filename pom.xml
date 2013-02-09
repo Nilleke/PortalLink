@@ -12,6 +12,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.github.site>${project.build.directory}/github-site</project.github.site>
+        <plugin.yml.version>${project.version} (Git ${git.commit.info}, Build ${project.build.number})</plugin.yml.version>
     </properties>
     <repositories>
         <repository>
@@ -70,7 +71,7 @@
 
     <build>
         <defaultGoal>clean verify</defaultGoal>
-        <finalName>${project.name}</finalName>
+        <finalName>${project.name}-${project.version}</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -78,6 +79,7 @@
                 <configuration>
                     <useDefaultDelimiters>false</useDefaultDelimiters>
                     <delimiters>
+                        <!--suppress MavenModelInspection -->
                         <delimiter>${*}</delimiter>
                     </delimiters>
                     <escapeString>\</escapeString>
@@ -159,6 +161,9 @@
                                 <requireReleaseDeps>
                                     <message>Dependencies must not be snapshots!</message>
                                     <onlyWhenRelease>false</onlyWhenRelease>
+                                    <excludes>
+                                        <exclude>org.bukkit:bukkit</exclude>
+                                    </excludes>
                                 </requireReleaseDeps>
                             </rules>
                             <fail>true</fail>

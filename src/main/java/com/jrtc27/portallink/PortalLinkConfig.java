@@ -86,11 +86,11 @@ public class PortalLinkConfig {
 				}
 				int whichNether = 0;
 				if (args[0].startsWith("<") && args[0].endsWith(">")) {
-					whichNether += 1;
+					whichNether |= 1;
 					args[0] = args[0].substring(1, args[0].length() - 1);
 				}
 				if (args[1].startsWith("<") && args[1].endsWith(">")) {
-					whichNether += 2;
+					whichNether |= 2;
 					args[1] = args[1].substring(1, args[1].length() - 1);
 				}
 				if (!args[0].equals("")) {
@@ -99,36 +99,12 @@ public class PortalLinkConfig {
 					}
 					definedLinks.put(args[0], new PortalLinkLinkValue(args[1], whichNether));
 				}
-				Environment environmentForWorld1 = Environment.NORMAL;
-				Environment environmentForWorld2 = Environment.NORMAL;
-				switch (whichNether) {
-					case 0:
-						environmentForWorld1 = Environment.NORMAL;
-						environmentForWorld2 = Environment.NORMAL;
-						break;
-					case 1:
-						environmentForWorld1 = Environment.NETHER;
-						environmentForWorld2 = Environment.NORMAL;
-						break;
-					case 2:
-						environmentForWorld1 = Environment.NORMAL;
-						environmentForWorld2 = Environment.NETHER;
-						break;
-					case 3:
-						environmentForWorld1 = Environment.NETHER;
-						environmentForWorld2 = Environment.NETHER;
-						break;
-					default:
-						break;
-				}
+				final Environment environmentForWorld1 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
+				final Environment environmentForWorld2 = (whichNether & 2) == 0 ? Environment.NORMAL : Environment.NETHER;
 				if (!args[0].equals("")) plugin.createWorld(args[0], environmentForWorld1);
 				if (!args[1].equals("")) plugin.createWorld(args[1], environmentForWorld2);
 				if (twoWay) {
-					if (whichNether == 2) {
-						whichNether--;
-					} else if (whichNether == 1) {
-						whichNether++;
-					}
+					whichNether = (whichNether & 1) << 1 | (whichNether & 2) >> 1; // Swap bits 0 and 1
 					if (!args[1].equals("")) {
 						if (definedLinks.containsKey(args[1])) {
 							plugin.logWarning("Overriding previous link for \"" + args[1] + "\".");
