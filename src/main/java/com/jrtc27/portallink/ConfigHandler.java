@@ -31,7 +31,7 @@ public class ConfigHandler {
 
 	private final PortalLink plugin;
 
-	private Map<String, LinkEntry> definedLinks = new HashMap<String, LinkEntry>();
+	private final Map<String, LinkEntry> definedLinks = new HashMap<String, LinkEntry>();
 	private boolean denyEntityPortal;
 
 	public ConfigHandler(final PortalLink plugin) {
@@ -94,7 +94,7 @@ public class ConfigHandler {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (FileNotFoundException e) {
-			File directory = this.plugin.getDataFolder();
+			final File directory = this.plugin.getDataFolder();
 			if (!directory.isDirectory()) {
 				if (!directory.mkdir()) {
 					this.plugin.logSevere("Unable to create plugin data directory!");
@@ -102,7 +102,7 @@ public class ConfigHandler {
 				}
 			}
 			try {
-				Writer out = new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME)), "UTF-8");
+				final Writer out = new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME)), "UTF-8");
 				out.write("# Place any custom links inside this file.\n");
 				out.write("# Any world will be automatically linked with its name followed by \"_nether\".\n");
 				out.write("# Links should be specified with the format World=<NetherWorld>.\n");
@@ -177,7 +177,7 @@ public class ConfigHandler {
 		}
 		final String outStr = "\n" + str1 + (twoWay ? "==" : "=") + str2;
 		try {
-			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME), true), "UTF-8"));
+			final Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME), true), "UTF-8"));
 			out.write(outStr);
 			out.close();
 		} catch (UnsupportedEncodingException e) {
@@ -249,8 +249,8 @@ public class ConfigHandler {
 			}
 		}
 		if (removedLink) {
-			File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
-			File targetFile = new File(this.plugin.getDataFolder(), LINKS_FILE_NAME);
+			final File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
+			final File targetFile = new File(this.plugin.getDataFolder(), LINKS_FILE_NAME);
 			if (!tempFile.renameTo(targetFile)) {
 				if (!targetFile.delete()) {
 					// Do nothing

@@ -39,7 +39,7 @@ public class PlayerListener implements Listener, CommandExecutor {
 		this.plugin = plugin;
 	}
 
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(final CommandSender sender, final Command command, final String label, final String[] args) {
 		if (args.length == 0) return false;
 		if (args[0].equalsIgnoreCase("link") && args.length > 1) {
 			if (!sender.hasPermission("portallink.link")) {
