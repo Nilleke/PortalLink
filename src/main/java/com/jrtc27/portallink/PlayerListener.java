@@ -32,10 +32,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 
-public class PortalLinkListener implements Listener, CommandExecutor {
+public class PlayerListener implements Listener, CommandExecutor {
 	private final PortalLink plugin;
 
-	public PortalLinkListener(final PortalLink plugin) {
+	public PlayerListener(final PortalLink plugin) {
 		this.plugin = plugin;
 	}
 
@@ -85,34 +85,38 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 					index = 3;
 				}
 			}
-			String str1;
-			String str2;
+			String firstWorldName;
+			String secondWorldName;
 			if (args.length <= index) {
 				return false;
 			} else {
-				str1 = args[index].trim();
-				while (str1.endsWith("\\")) {
+				firstWorldName = args[index].trim();
+				while (firstWorldName.endsWith("\\")) {
 					index++;
 					if (args.length > index) {
-						str1 = str1.substring(0, str1.length() - 1).concat(" " + args[index]);
+						firstWorldName = firstWorldName.substring(0, firstWorldName.length() - 1).concat(" " + args[index]);
 					} else {
 						return false;
 					}
 				}
 			}
 			if (args.length <= (index + 1)) {
-				str2 = "";
+				secondWorldName = "";
 			} else {
-				str2 = args[index + 1];
-				str2 = str2.trim();
-				while (str2.endsWith("\\")) {
+				secondWorldName = args[index + 1];
+				secondWorldName = secondWorldName.trim();
+				while (secondWorldName.endsWith("\\")) {
 					index++;
 					if (args.length > (index + 1)) {
-						str2 = str2.substring(0, str2.length() - 1).concat(" " + args[index + 1]);
+						secondWorldName = secondWorldName.substring(0, secondWorldName.length() - 1).concat(" " + args[index + 1]);
 					}
 				}
 			}
-			this.plugin.getPortalLinkConfig().addLinkAndSave(str1, str2, (sender instanceof Player) ? sender : null, twoWay, whichNether);
+			if (firstWorldName.contains("=") || secondWorldName.contains("=")) {
+				sender.sendMessage(ChatColor.RED + "PortalLinks cannot contain \"=\"!");
+				return true;
+			}
+			this.plugin.getPortalLinkConfig().addLinkAndSave(firstWorldName, secondWorldName, (sender instanceof Player) ? sender : null, twoWay, whichNether);
 			return true;
 		} else if (args[0].equals("unlink") && args.length > 1) {
 			if (!sender.hasPermission("portallink.unlink")) {
@@ -120,28 +124,28 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 				return true;
 			}
 			int index = 1;
-			String str1 = args[index].trim();
-			String str2;
-			while (str1.endsWith("\\")) {
+			String firstWorldName = args[index].trim();
+			String secondWorldName;
+			while (firstWorldName.endsWith("\\")) {
 				index++;
 				if (args.length > index) {
-					str1 = str1.substring(0, str1.length() - 1).concat(" " + args[index]);
+					firstWorldName = firstWorldName.substring(0, firstWorldName.length() - 1).concat(" " + args[index]);
 				} else {
 					return false;
 				}
 			}
 			if (args.length <= (index + 1)) {
-				str2 = "";
+				secondWorldName = "";
 			} else {
-				str2 = args[index + 1].trim();
-				while (str2.endsWith("\\")) {
+				secondWorldName = args[index + 1].trim();
+				while (secondWorldName.endsWith("\\")) {
 					index++;
 					if (args.length > (index + 1)) {
-						str2 = str2.substring(0, str2.length() - 1).concat(" " + args[index + 1]);
+						secondWorldName = secondWorldName.substring(0, secondWorldName.length() - 1).concat(" " + args[index + 1]);
 					}
 				}
 			}
-			this.plugin.getPortalLinkConfig().removeLink(str1, str2, (sender instanceof Player) ? sender : null);
+			this.plugin.getPortalLinkConfig().removeLink(firstWorldName, secondWorldName, (sender instanceof Player) ? sender : null);
 			return true;
 		} else if (args[0].equals("reload") && args.length == 1) {
 			if (!sender.hasPermission("portallink.reload")) {
@@ -191,9 +195,9 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 		final Environment oldEnvironment;
 		final Environment newEnvironment;
 		boolean useDimension = true;
-		final Map<String, PortalLinkLinkValue> definedLinks = plugin.getPortalLinkConfig().getUserDefinedLinks();
+		final Map<String, LinkEntry> definedLinks = plugin.getPortalLinkConfig().getUserDefinedLinks();
 		if (definedLinks.containsKey(player.getWorld().getName())) {
-			final PortalLinkLinkValue linkValue = definedLinks.get(fromWorld.getName());
+			final LinkEntry linkValue = definedLinks.get(fromWorld.getName());
 			int whichNether = linkValue.getWhichNether();
 			if ((whichNether & 1) == 0) {
 				oldEnvironment = Environment.NORMAL;
@@ -208,11 +212,11 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 			if (oldEnvironment == newEnvironment) {
 				useDimension = false;
 			}
-			if (!linkValue.getString().equals("")) {
-				toWorld = plugin.getWorld(linkValue.getString());
+			if (!linkValue.getTargetWorldName().equals("")) {
+				toWorld = plugin.getWorld(linkValue.getTargetWorldName());
 				if (toWorld == null) {
 					player.sendMessage("Loading world... You will be teleported when the world has been loaded.");
-					toWorld = plugin.createWorld(linkValue.getString(), newEnvironment);
+					toWorld = plugin.createWorld(linkValue.getTargetWorldName(), newEnvironment);
 					player.sendMessage("World loaded! Teleporting...");
 				}
 			} else {
@@ -222,7 +226,7 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 			}
 		} else {
 			oldEnvironment = player.getWorld().getEnvironment() == Environment.NETHER ? Environment.NETHER : Environment.NORMAL;
-			if (!plugin.getAllowNether(fromWorld)) {
+			if (!plugin.getAllowNether()) {
 				return;
 			}
 			final String toWorldName;
@@ -287,57 +291,6 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 				player.sendMessage(ChatColor.RED + "An internal error has occurred whilst finding the main end!");
 				return;
 			}
-			/*final Map<String, PortalLinkLinkValue> definedLinks = plugin.getPortalLinkConfig().getUserDefinedLinks();
-			if (definedLinks.containsKey(player.getWorld().getName())) {
-				PortalLinkLinkValue linkValue = definedLinks.get(player.getWorld().getName());
-				/*fromWorld = player.getWorld();
-				PortalLinkLinkValue linkValue = definedLinks.get(fromWorld.getName());
-				Environment environment = Environment.THE_END;
-				if (!linkValue.getString().equals("")) {
-					toWorld = plugin.getWorld(linkValue.getString());
-					if (toWorld == null) {
-						player.sendMessage("Loading world... You will be teleported when the world has been loaded.");
-						toWorld = plugin.createWorld(linkValue.getString(), environment);
-						player.sendMessage("World loaded! Teleporting...");
-					}
-				} else {
-					event.setCancelled(true);
-					player.sendMessage(ChatColor.RED + "The End has been disabled for " + player.getWorld().getName() + ".");
-					return;
-				}*//*
-			}
-			if (toWorld == null) {
-				Environment environment = player.getWorld().getEnvironment();
-				for (World world1 : plugin.getServer().getWorlds()) {
-					if (world1.getEnvironment().equals(environment)) {
-						if (world1.getName().equals(player.getWorld().getName())) {
-							fromWorld = world1;
-						}
-					}
-				}
-				if (!plugin.getAllowNether(fromWorld)) {
-					return;
-				}
-				if (fromWorld == null) {
-					this.plugin.logSevere("Unable To Match A World To The Player's World!");
-					return;
-				}
-				if (environment == Environment.THE_END) {
-					toWorld = plugin.getWorld(fromWorld.getName().replaceAll("_nether", "").replaceAll("_the_end", ""));
-				} else {
-					toWorld = plugin.getWorld(fromWorld.getName().replaceAll("_nether", "").replaceAll("_the_end", "") + "_the_end");
-				}
-				if (toWorld == null) {
-					player.sendMessage("Loading world... You will be teleported when the world has been loaded.");
-					if (environment == Environment.THE_END) {
-						toWorld = plugin.createWorld(fromWorld.getName().replaceAll("_nether", "").replaceAll("_the_end", ""), Environment.NORMAL);
-					} else {
-						toWorld = plugin.createWorld(fromWorld.getName().replaceAll("_nether", "").replaceAll("_the_end", "") + "_the_end", Environment.THE_END);
-					}
-					player.sendMessage("World loaded! Teleporting...");
-				}
-			}*/
-
 			final Location fromLocation = new Location(fromWorld, player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ(), player.getLocation().getYaw(), player.getLocation().getPitch());
 			final Location toLocation = new Location(toWorld, 100, 50, 0, 90, 0);
 			event.setTo(toLocation);
@@ -345,11 +298,4 @@ public class PortalLinkListener implements Listener, CommandExecutor {
 			event.useTravelAgent(true);
 		}
 	}
-	
-	/*private String replaceLast(String string, String from, String to) {
-	     int lastIndex = string.lastIndexOf(from);
-	     if (lastIndex < 0) return string;
-	     String tail = string.substring(lastIndex).replaceFirst(from, to);
-	     return string.substring(0, lastIndex) + tail;
-	}*/
 }

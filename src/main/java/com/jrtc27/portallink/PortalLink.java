@@ -24,7 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
-import org.bukkit.TravelAgent;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldCreator;
@@ -39,14 +38,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 public class PortalLink extends JavaPlugin {
 	private PluginDescriptionFile pdf;
-	private final PortalLinkListener plListener = new PortalLinkListener(this);
-	public final PortalLinkConfig plConfig = new PortalLinkConfig(this);
+	private final PlayerListener plListener = new PlayerListener(this);
+	public final ConfigHandler plConfig = new ConfigHandler(this);
 	private Logger logger;
 	private BukkitTask updateCheckTask;
 	public String adminMessage = null;
 	private String version = null;
 	private String jenkinsBuild = null;
-	public boolean supportedVersion = false;
+	public boolean checkForUpdates = true;
 
 	@Override
 	public void onEnable() {
@@ -57,16 +56,27 @@ public class PortalLink extends JavaPlugin {
 		this.getCommand("pl").setExecutor(plListener);
 		final PluginManager pluginManager = this.getServer().getPluginManager();
 		pluginManager.registerEvents(plListener, this);
-		this.updateCheckTask = this.getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
-			@Override
-			public void run() {
-				checkForUpdates();
-			}
-		}, 20, 432000); // 20 ticks * 60 seconds * 60 minutes * 6 hours => 6 hours in ticks
+
+		if (this.version == null || this.version.equalsIgnoreCase("${project.version}")) {
+			this.logSevere("Error reading version info file!");
+			this.adminMessage = null;
+		} else if (this.version.endsWith("-SNAPSHOT")) {
+			this.logWarning("You are currently running a snapshot version - please be aware that there may be (serious) bugs!");
+			this.adminMessage = null;
+		} else if (this.checkForUpdates) {
+			this.updateCheckTask = this.getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+				@Override
+				public void run() {
+					checkForUpdates();
+				}
+			}, 20, 432000); // 20 ticks * 60 seconds * 60 minutes * 6 hours => 6 hours in ticks
+		} else {
+			this.logInfo("Update checking has been disabled!");
+		}
 		this.logInfo(pdf.getFullName() + " is enabled!");
 	}
 
-	public boolean getAllowNether(final World world) {
+	public boolean getAllowNether() {
 		return this.getServer().getAllowNether();
 	}
 
@@ -79,7 +89,7 @@ public class PortalLink extends JavaPlugin {
 		this.logger.info(pdf.getFullName() + " is disabled!");
 	}
 
-	public PortalLinkConfig getPortalLinkConfig() {
+	public ConfigHandler getPortalLinkConfig() {
 		return this.plConfig;
 	}
 
@@ -157,17 +167,6 @@ public class PortalLink extends JavaPlugin {
 	}
 
 	public void checkForUpdates() {
-		if (this.version == null || this.version.equalsIgnoreCase("${project.version}")) {
-			this.logSevere("Error reading version info file!");
-			this.adminMessage = null;
-			return;
-		}
-		if (this.version.endsWith("-SNAPSHOT")) {
-			this.logWarning("You are currently running a snapshot version - please be aware that there may be (serious) bugs!");
-			this.adminMessage = null;
-			return;
-		}
-
 		BufferedReader reader = null;
 		try {
 			final URLConnection connection = new URL("http://jrtc27.github.com/PortalLink/version").openConnection();

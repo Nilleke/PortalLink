@@ -14,21 +14,21 @@
 
 package com.jrtc27.portallink;
 
-public class PortalLinkLinkValue {
-	private String string;
-	private int whichNether;
+public class LinkEntry {
+	private final String targetWorldName;
+	private final int whichNether;
 
-	public PortalLinkLinkValue(String str, int which) {
-		string = str;
-		whichNether = which;
+	public LinkEntry(final String targetWorldName, final int whichNether) {
+		this.targetWorldName = targetWorldName;
+		this.whichNether = whichNether;
 	}
 
-	public String getString() {
-		return string;
+	public String getTargetWorldName() {
+		return this.targetWorldName;
 	}
 
 	public int getWhichNether() {
-		return whichNether;
+		return this.whichNether;
 	}
 
 }

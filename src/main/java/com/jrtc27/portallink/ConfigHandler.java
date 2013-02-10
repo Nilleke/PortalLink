@@ -24,21 +24,21 @@ import org.bukkit.World.Environment;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.MemoryConfiguration;
 
-public class PortalLinkConfig {
+public class ConfigHandler {
 	private static final String LINKS_FILE_NAME = "links.properties";
 	private static final String LINKS_TEMP_FILE_NAME = LINKS_FILE_NAME + ".tmp";
 	private final Pattern LINK_PATTERN = Pattern.compile("(^(?==)|(?<==)(?=[^=])|(?<=[^=])(?==)|(?<==)$)");
 
 	private final PortalLink plugin;
 
-	private Map<String, PortalLinkLinkValue> definedLinks = new HashMap<String, PortalLinkLinkValue>();
+	private Map<String, LinkEntry> definedLinks = new HashMap<String, LinkEntry>();
 	private boolean denyEntityPortal;
 
-	public PortalLinkConfig(final PortalLink plugin) {
+	public ConfigHandler(final PortalLink plugin) {
 		this.plugin = plugin;
 	}
 
-	public Map<String, PortalLinkLinkValue> getUserDefinedLinks() {
+	public Map<String, LinkEntry> getUserDefinedLinks() {
 		return this.definedLinks;
 	}
 
@@ -55,6 +55,7 @@ public class PortalLinkConfig {
 		this.plugin.saveDefaultConfig();
 		final MemoryConfiguration config = this.plugin.getConfig();
 		this.denyEntityPortal = config.getBoolean("deny-entity-portal", true);
+		this.plugin.checkForUpdates = config.getBoolean("check-updates", true);
 	}
 
 	private void loadUserDefinedLinks() {
@@ -71,6 +72,7 @@ public class PortalLinkConfig {
 				final String[] args = LINK_PATTERN.split(s, -1); // -1 means we get the trailing space
 				if (args.length < 3) {
 					this.plugin.logWarning("Missing \"=\" sign(s) on line " + line + " of " + LINKS_FILE_NAME + ".");
+					continue;
 				} else if (args.length > 3) {
 					this.plugin.logWarning("Only one link can be specified per line - ignoring all other links on line " + line + " of " + LINKS_FILE_NAME + ".");
 				}
@@ -112,7 +114,6 @@ public class PortalLinkConfig {
 				out.write("# Only one link per line (extra links will be ignored).\n");
 				out.write("# Later links will override previous ones.\n");
 				out.write("# Lines beginning with a hash (\"#\") are treated as comments and so are ignored.\n");
-				out.write("\n");
 				out.close();
 			} catch (UnsupportedEncodingException e1) {
 				e1.printStackTrace();
@@ -134,7 +135,7 @@ public class PortalLinkConfig {
 				}
 				this.plugin.logWarning("Overriding previous link for \"" + str1 + "\".");
 			}
-			this.definedLinks.put(str1, new PortalLinkLinkValue(str2, whichNether));
+			this.definedLinks.put(str1, new LinkEntry(str2, whichNether));
 		}
 		if (announceCreate) {
 			if (sender != null) {
@@ -143,7 +144,7 @@ public class PortalLinkConfig {
 			this.plugin.logInfo("Creating link...");
 		}
 		final Environment environmentForWorld1 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
-		final Environment environmentForWorld2 = (whichNether & 1) == 0 ? Environment.NORMAL : Environment.NETHER;
+		final Environment environmentForWorld2 = (whichNether & 2) == 0 ? Environment.NORMAL : Environment.NETHER;
 		if (!str1.equals("")) this.plugin.createWorld(str1, environmentForWorld1);
 		if (!str2.equals("")) this.plugin.createWorld(str2, environmentForWorld2);
 		if (twoWay) {
@@ -155,8 +156,14 @@ public class PortalLinkConfig {
 					}
 					this.plugin.logWarning("Overriding previous link for \"" + str2 + "\".");
 				}
-				this.definedLinks.put(str2, new PortalLinkLinkValue(str1, whichNether));
+				this.definedLinks.put(str2, new LinkEntry(str1, whichNether));
 			}
+		}
+		if (announceCreate) {
+			if (sender != null) {
+				sender.sendMessage("Created link!");
+			}
+			this.plugin.logInfo("Created link!");
 		}
 	}
 
@@ -170,7 +177,7 @@ public class PortalLinkConfig {
 		}
 		final String outStr = "\n" + str1 + (twoWay ? "==" : "=") + str2;
 		try {
-			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME), true), "UTF-8"));
+			Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(this.plugin.getDataFolder(), LINKS_FILE_NAME), true), "UTF-8"));
 			out.write(outStr);
 			out.close();
 		} catch (UnsupportedEncodingException e) {
@@ -180,26 +187,6 @@ public class PortalLinkConfig {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		File tempFile = new File(this.plugin.getDataFolder(), LINKS_TEMP_FILE_NAME);
-		File targetFile = new File(this.plugin.getDataFolder(), LINKS_FILE_NAME);
-		if (!tempFile.renameTo(targetFile)) {
-			if (!targetFile.delete()) {
-
-			}
-			if (!tempFile.renameTo(targetFile)) {
-				this.plugin.logSevere("Unable to rename the temporary file!");
-			} else {
-				if (sender != null) {
-					sender.sendMessage("Link successfully created!");
-				}
-				this.plugin.logInfo("Link successfully created!");
-			}
-		} else {
-			if (sender != null) {
-				sender.sendMessage("Link successfully created!");
-			}
-			this.plugin.logInfo("Link successfully created!");
 		}
 	}
 

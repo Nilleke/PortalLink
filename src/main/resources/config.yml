@@ -5,3 +5,4 @@
 # will go to the wrong worlds.
 #
 deny-entity-portal: true
+check-updates: true

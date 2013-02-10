@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.jrtc27</groupId>
     <artifactId>PortalLink</artifactId>
-    <version>0.8-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>PortalLink</name>
     <prerequisites>
         <maven>3.0</maven>
@@ -21,13 +21,13 @@
         </repository>
         <repository>
             <id>jrtc27-repo</id>
-            <url>http://jrtc27.github.com/repo/releases</url>
+            <url>http://repo.jrtc27.com/releases</url>
         </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
             <id>jrtc27-plugin-repo</id>
-            <url>http://jrtc27.github.com/repo/releases</url>
+            <url>http://repo.jrtc27.com/releases</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -66,8 +66,19 @@
                 <project.build.number>?</project.build.number>
             </properties>
         </profile>
+        <profile>
+            <id>custom-release-profile</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <plugin.yml.version>${project.version}</plugin.yml.version>
+            </properties>
+        </profile>
     </profiles>
-
 
     <build>
         <defaultGoal>clean verify</defaultGoal>
@@ -131,8 +142,8 @@
                             <goal>gitinfo</goal>
                         </goals>
                         <configuration>
-                            <outputPrefix></outputPrefix>
-                            <outputSuffix></outputSuffix>
+                            <outputPrefix/>
+                            <outputSuffix/>
                         </configuration>
                     </execution>
                 </executions>
@@ -161,9 +172,6 @@
                                 <requireReleaseDeps>
                                     <message>Dependencies must not be snapshots!</message>
                                     <onlyWhenRelease>false</onlyWhenRelease>
-                                    <excludes>
-                                        <exclude>org.bukkit:bukkit</exclude>
-                                    </excludes>
                                 </requireReleaseDeps>
                             </rules>
                             <fail>true</fail>
