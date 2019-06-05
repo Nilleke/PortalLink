@@ -15,8 +15,8 @@
 package com.jrtc27.portallink;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
@@ -65,7 +65,6 @@ public class PortalLink extends JavaPlugin {
 			this.adminMessage = null;
 		} else if (this.checkForUpdates) {
 			this.updateCheckTask = this.getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
-				@Override
 				public void run() {
 					checkForUpdates();
 				}
@@ -146,22 +145,23 @@ public class PortalLink extends JavaPlugin {
 	}
 
 	public void loadVersionInfo() {
-		final InputStream stream = this.getResource("version-info.yml");
-		if (stream != null) {
-			final FileConfiguration config = new YamlConfiguration();
-			boolean loaded = true;
-			try {
-				config.load(stream);
-			} catch (Exception e) {
-				e.printStackTrace();
-				loaded = false;
-			}
-			if (loaded) {
-				this.version = config.getString("version");
-				this.jenkinsBuild = config.getString("jenkins-build");
-				return;
-			}
+		final File file = new File(this.getDataFolder(), "version-info.yml");
+		saveResource("version-info.yml", false);
+
+		final FileConfiguration config = new YamlConfiguration();
+		boolean loaded = true;
+		try {
+			config.load(file);
+		} catch (Exception e) {
+			e.printStackTrace();
+			loaded = false;
 		}
+		if (loaded) {
+			this.version = config.getString("version");
+			this.jenkinsBuild = config.getString("jenkins-build");
+			return;
+		}
+		
 		this.version = null;
 		this.jenkinsBuild = null;
 	}
