@@ -44,8 +44,10 @@ public class PortalLink extends JavaPlugin {
 	private BukkitTask updateCheckTask;
 	public String adminMessage = null;
 	private String version = null;
+	public boolean checkForUpdates = false;
+	
+	@SuppressWarnings("unused")
 	private String jenkinsBuild = null;
-	public boolean checkForUpdates = true;
 
 	@Override
 	public void onEnable() {
@@ -169,7 +171,7 @@ public class PortalLink extends JavaPlugin {
 	public void checkForUpdates() {
 		BufferedReader reader = null;
 		try {
-			final URLConnection connection = new URL("http://jrtc27.github.com/PortalLink/version").openConnection();
+			final URLConnection connection = new URL("https://nilleke.github.com/PortalLink/version").openConnection();
 			connection.setConnectTimeout(10000);
 			connection.setReadTimeout(10000);
 			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
