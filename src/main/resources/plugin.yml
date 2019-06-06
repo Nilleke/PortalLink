@@ -1,6 +1,6 @@
 name: ${project.name}
 main: com.jrtc27.portallink.PortalLink
-version: ${plugin.yml.version}
+version: ${project.version}
 author: James Clarke (jrtc27)
 website: http://dev.bukkit.org/server-mods/portallink
 description: Fix Nether portal linking in alternate worlds.

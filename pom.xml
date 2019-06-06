@@ -11,35 +11,25 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.github.site>${project.build.directory}/github-site</project.github.site>
-        <plugin.yml.version>${project.version} (Git ${git.commit.info}, Build ${project.build.number})</plugin.yml.version>
     </properties>
     <repositories>
+        <!-- Repository for Bukkit -->
         <repository>
-            <id>bukkit-repo</id>
-            <url>http://repo.bukkit.org/content/groups/public</url>
-        </repository>
-        <repository>
-            <id>jrtc27-repo</id>
-            <url>http://repo.jrtc27.com/releases</url>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
         </repository>
     </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jrtc27-plugin-repo</id>
-            <url>http://repo.jrtc27.com/releases</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <scm>
-        <connection>scm:git:git://github.com/jrtc27/PortalLink.git</connection>
-        <url>https://github.com/jrtc27/PortalLink</url>
-        <developerConnection>scm:git:git@github.com:jrtc27/PortalLink.git</developerConnection>
+        <connection>scm:git:git://github.com/Nilleke/PortalLink.git</connection>
+        <url>https://github.com/Nilleke/PortalLink</url>
+        <developerConnection>scm:git:git@github.com:Nilleke/PortalLink.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <ciManagement>
         <system>jenkins</system>
-        <url>https://ci.jrtc27.com/</url>
+        <url>https://letsbuild.net/jenkins/</url>
     </ciManagement>
 
     <profiles>
@@ -130,20 +120,14 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.jrtc27.mojo</groupId>
-                <artifactId>git-info-maven-plugin</artifactId>
-                <version>1.0</version>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.5</version>
                 <executions>
                     <execution>
-                        <id>git-info</id>
-                        <phase>initialize</phase>
                         <goals>
-                            <goal>gitinfo</goal>
+                            <goal>revision</goal>
                         </goals>
-                        <configuration>
-                            <outputPrefix />
-                            <outputSuffix />
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -152,31 +136,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.5.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.1.1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-no-snapshots</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireReleaseDeps>
-                                    <message>Dependencies must not be snapshots!</message>
-                                    <onlyWhenRelease>false</onlyWhenRelease>
-                                </requireReleaseDeps>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -249,10 +211,12 @@
         </plugins>
     </build>
     <dependencies>
+        <!-- Bukkit -->
         <dependency>
+            <!-- GPL -->
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.4.7-R1.0</version>
+            <version>1.13.2-R0.1-SNAPSHOT</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>

@@ -29,6 +29,7 @@ import org.junit.Test;
  *
  * @author Feildmaster, jrtc27
  */
+@SuppressWarnings("rawtypes")
 public class TestListeners {
 	private Class[] knownListeners = new Class[] { PlayerListener.class };
 
